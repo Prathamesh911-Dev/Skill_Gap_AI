@@ -1,0 +1,12 @@
+streamlit
+PyPDF2
+python-docx
+pandas
+numpy
+spacy
+plotly
+matplotlib
+wordcloud
+sentence-transformers
+reportlab
+kaleido

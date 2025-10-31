@@ -10,7 +10,7 @@ Features:
   * Gap identification and ranking
   * Missing/partially matched skills analysis
 
-Run with: streamlit run pipeline.py
+Run with: streamlit run filename.py
 Required: pip install streamlit spacy PyPDF2 python-docx pandas plotly sentence-transformers scikit-learn
           python -m spacy download en_core_web_sm
 """
@@ -2762,6 +2762,29 @@ def main():
                 result = st.session_state.gap_analysis_result
                 match_score = result['statistics'].get('weighted_match', 0)
                 st.metric("Match Score", f"{match_score:.1f}%")
+            
+            st.markdown("---")
+            
+            # Reset Button with red styling
+            st.markdown("""
+                <style>
+                div.stButton > button[kind="secondary"] {
+                    background-color: #dc3545 !important;
+                    color: white !important;
+                    border: none !important;
+                }
+                div.stButton > button[kind="secondary"]:hover {
+                    background-color: #c82333 !important;
+                    color: white !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🔄 Reset All", use_container_width=True, type="secondary", key="reset_button"):
+                # Clear all session state
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+                st.rerun()
             
             st.markdown("---")
             

@@ -10,7 +10,7 @@ Features:
   * Gap identification and ranking
   * Missing/partially matched skills analysis
 
-Run with: streamlit run filename.py
+Run with: streamlit run pipeline.py
 Required: pip install streamlit spacy PyPDF2 python-docx pandas plotly sentence-transformers scikit-learn
           python -m spacy download en_core_web_sm
 """
@@ -47,50 +47,708 @@ except ImportError:
 
 # Configure page
 st.set_page_config(
-    page_title="AI Skill Gap Analyzer - Complete",
+    page_title="AI Skill Gap Analyzer Pro",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# FIXED UI STYLING - Replace your existing st.markdown styling section
 
 st.markdown("""
     <style>
-    section[data-testid="stSidebar"] {
-        background-color: #FFF0F5 !important;
-        color: #000000 !important;
-        border-right: 1px solid #DD99BB;
-        padding: 1rem;
+    /* ============= GLOBAL STYLES ============= */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
+    * {
+        font-family: 'Poppins', sans-serif;
     }
+    
+    .main {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background-attachment: fixed;
+    }
+    
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        margin: 1rem;
+    }
+    
+    /* ============= SIDEBAR STYLES ============= */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%) !important;
+        border-right: none !important;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    section[data-testid="stSidebar"] * {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stMarkdown {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] h3 {
+        color: #fbbf24 !important;
+        font-weight: 600 !important;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* FIXED: Sidebar Select Box - Make text visible */
+    section[data-testid="stSidebar"] .stSelectbox label {
+        color: #fef3c7 !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Select box container */
+    section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
+        background-color: white !important;
+    }
+    
+    /* Selected value text */
+    section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
+        background-color: white !important;
+        color: #1f2937 !important;
+        font-weight: 500 !important;
+    }
+    
+    /* All text inside select */
+    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] * {
+        color: #1f2937 !important;
+    }
+    
+    /* Dropdown menu options */
+    section[data-testid="stSidebar"] .stSelectbox [role="listbox"] {
+        background-color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stSelectbox [role="option"] {
+        background-color: white !important;
+        color: #1f2937 !important;
+    }
+    
+    section[data-testid="stSidebar"] .stSelectbox [role="option"]:hover {
+        background-color: #e0e7ff !important;
+        color: #1f2937 !important;
+    }
+    
+    /* FIXED: Sidebar Slider - RED like the screenshot */
+    section[data-testid="stSidebar"] .stSlider label {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    /* Slider thumb - RED circle */
+    section[data-testid="stSidebar"] .stSlider [role="slider"] {
+        background-color: #ef4444 !important;
+        border: 3px solid #ef4444 !important;
+        width: 20px !important;
+        height: 20px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* Slider track container */
+    section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] {
+        background: transparent !important;
+    }
+    
+    /* Slider track background - light/white */
+    section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] > div {
+        background: transparent !important;
+    }
+    
+    section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] > div > div {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        height: 4px !important;
+    }
+    
+    /* Slider filled track - RED (left side) */
+    section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] > div > div > div {
+        background-color: #ef4444 !important;
+        height: 4px !important;
+    }
+    
+    /* Slider value text - RED */
+    section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] [data-testid="stTickBarMin"],
+    section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] [data-testid="stTickBarMax"] {
+        color: #ef4444 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* FIXED: Sidebar Status/Info boxes - Change background */
+    section[data-testid="stSidebar"] .stSuccess,
+    section[data-testid="stSidebar"] .stInfo {
+        background: rgba(255, 255, 255, 0.25) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 12px !important;
+        padding: 1rem !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    section[data-testid="stSidebar"] .stSuccess *,
+    section[data-testid="stSidebar"] .stInfo * {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* FIXED: Sidebar Metric (Match Score) - Pure BLACK, no glow */
+    section[data-testid="stSidebar"] [data-testid="stMetricValue"] {
+        color: #000000 !important;
+        font-size: 2.5rem !important;
+        font-weight: 900 !important;
+        text-shadow: none !important;
+        -webkit-text-stroke: 0px !important;
+    }
+    
+    section[data-testid="stSidebar"] [data-testid="stMetricLabel"] {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    section[data-testid="stSidebar"] [data-testid="stMetricDelta"] {
+        color: #86efac !important;
+        font-weight: 700 !important;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    /* Metric container in sidebar - lighter background for black text visibility */
+    section[data-testid="stSidebar"] div[data-testid="metric-container"] {
+        background: rgba(255, 255, 255, 0.3) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 2px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 15px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    /* Sidebar buttons */
+    section[data-testid="stSidebar"] .stButton button {
+        background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        padding: 0.6rem 1.2rem !important;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6) !important;
+    }
+    
+    /* ============= MAIN CONTENT SELECT BOXES ============= */
+    .stSelectbox div[data-baseweb="select"] {
+        background-color: white !important;
+    }
+    
+    .stSelectbox div[data-baseweb="select"] > div {
+        background-color: white !important;
+        color: #1f2937 !important;
+        font-weight: 500 !important;
+    }
+    
+    .stSelectbox [data-baseweb="select"] span {
+        color: #1f2937 !important;
+    }
+    
+    .stSelectbox label {
+        color: #4f46e5 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* ============= HEADER STYLES ============= */
+    h1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800 !important;
+        font-size: 3rem !important;
+        text-align: center;
+        margin-bottom: 0.5rem !important;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    h2 {
+        color: #4f46e5;
+        font-weight: 700 !important;
+        border-bottom: 3px solid #818cf8;
+        padding-bottom: 0.5rem;
+        margin-top: 2rem !important;
+    }
+    
+    h3 {
+        color: #6366f1;
+        font-weight: 600 !important;
+        margin-top: 1.5rem !important;
+    }
+    
+    /* ============= BUTTON STYLES ============= */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 15px !important;
+        padding: 0.75rem 2rem !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+        transition: all 0.3s ease !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6) !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(-1px) !important;
+    }
+    
+    /* Primary buttons */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4) !important;
+    }
+    
+    .stButton > button[kind="primary"]:hover {
+        box-shadow: 0 12px 35px rgba(16, 185, 129, 0.6) !important;
+    }
+    
+    /* Secondary buttons */
+    .stButton > button[kind="secondary"] {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4) !important;
+    }
+    
+    .stButton > button[kind="secondary"]:hover {
+        box-shadow: 0 12px 35px rgba(239, 68, 68, 0.6) !important;
+    }
+    
+    /* ============= FILE UPLOADER STYLES ============= */
+    .stFileUploader {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+        border: 3px dashed #818cf8 !important;
+        border-radius: 20px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stFileUploader:hover {
+        border-color: #6366f1 !important;
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .stFileUploader label {
+        color: #4f46e5 !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+    }
+    
+    /* ============= METRIC STYLES ============= */
+    [data-testid="stMetricValue"] {
+        font-size: 2.5rem !important;
+        font-weight: 700 !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #4f46e5 !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+    }
+    
+    [data-testid="stMetricDelta"] {
+        font-weight: 600 !important;
+    }
+    
+    div[data-testid="metric-container"] {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1);
+        border: 2px solid #c7d2fe;
+        transition: all 0.3s ease;
+    }
+    
+    div[data-testid="metric-container"]:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+    }
+    
+    /* ============= SKILL TAG STYLES ============= */
     .skill-tag {
         display: inline-block;
-        padding: 5px 10px;
-        margin: 5px;
-        background-color: #e1f5ff;
-        border-radius: 15px;
+        padding: 8px 16px;
+        margin: 6px;
+        border-radius: 20px;
         font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
+    
+    .skill-tag:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
     .tech-skill {
-        background-color: #e3f2fd;
-        color: #1976d2;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
     }
+    
     .soft-skill {
-        background-color: #f3e5f5;
-        color: #7b1fa2;
+        background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+        color: white;
     }
+    
     .matched-skill {
-        background-color: #c8e6c9;
-        color: #2e7d32;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        animation: pulse 2s infinite;
     }
+    
     .missing-skill {
-        background-color: #ffcdd2;
-        color: #c62828;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
     }
+    
     .partial-skill {
-        background-color: #fff9c4;
-        color: #f57f17;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.8; }
+    }
+    
+    /* ============= EXPANDER STYLES ============= */
+    .streamlit-expanderHeader {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+        border-radius: 12px;
+        border: 2px solid #c7d2fe;
+        font-weight: 600;
+        color: #4f46e5 !important;
+        padding: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background: linear-gradient(135deg, #dbeafe 0%, #c7d2fe 100%);
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+    }
+    
+    .streamlit-expanderContent {
+        border: 2px solid #e0e7ff;
+        border-radius: 12px;
+        background: #fafbff;
+        padding: 1.5rem;
+    }
+    
+    /* ============= TAB STYLES ============= */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+        padding: 0.5rem;
+        border-radius: 15px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: white;
+        border-radius: 10px;
+        color: #4f46e5;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: linear-gradient(135deg, #dbeafe 0%, #c7d2fe 100%);
+        transform: translateY(-2px);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: 2px solid #4f46e5 !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+    
+    /* ============= DATAFRAME STYLES ============= */
+    .stDataFrame {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stDataFrame table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .stDataFrame thead tr th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 1rem !important;
+    }
+    
+    .stDataFrame tbody tr:nth-child(even) {
+        background: #f0f9ff;
+    }
+    
+    .stDataFrame tbody tr:hover {
+        background: #dbeafe;
+        transform: scale(1.01);
+        transition: all 0.2s ease;
+    }
+    
+    /* ============= ALERT STYLES ============= */
+    .stAlert {
+        border-radius: 15px;
+        border: none;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stSuccess {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        border-left: 5px solid #10b981;
+    }
+    
+    .stWarning {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-left: 5px solid #f59e0b;
+    }
+    
+    .stError {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        border-left: 5px solid #ef4444;
+    }
+    
+    .stInfo {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border-left: 5px solid #3b82f6;
+    }
+    
+    /* ============= PROGRESS BAR STYLES ============= */
+    .stProgress > div > div > div > div {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+        border-radius: 10px;
+    }
+    
+    .stProgress > div > div {
+        background: #e0e7ff !important;
+        border-radius: 10px;
+    }
+    
+    /* ============= MAIN CONTENT SLIDER STYLES ============= */
+    .stSlider > div > div > div > div {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+    }
+    
+    .stSlider > div > div > div {
+        background: #e0e7ff !important;
+    }
+    
+    .stSlider [role="slider"] {
+        background-color: #667eea !important;
+    }
+    
+    /* ============= TEXT AREA STYLES ============= */
+    .stTextArea textarea {
+        border: 2px solid #c7d2fe;
+        border-radius: 12px;
+        background: #fafbff;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        color: #1f2937 !important;
+    }
+    
+    .stTextArea textarea:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+    }
+    
+    .stTextArea label {
+        color: #4f46e5 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* ============= LOADING SPINNER ============= */
+    .stSpinner > div {
+        border-top-color: #667eea !important;
+        border-right-color: #764ba2 !important;
+    }
+    
+    /* ============= CUSTOM ANIMATIONS ============= */
+    @keyframes slideInFromLeft {
+        0% { transform: translateX(-100%); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeIn {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+    
+    @keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.05); }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .block-container {
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    /* ============= DOWNLOAD BUTTON SPECIAL STYLE ============= */
+    .stDownloadButton > button {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
+        color: white !important;
+        border-radius: 12px !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stDownloadButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(6, 182, 212, 0.6) !important;
+    }
+    
+    /* ============= RADIO BUTTON STYLES ============= */
+    .stRadio > div {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .stRadio > div > label {
+        background: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        margin: 0.5rem;
+        border: 2px solid #c7d2fe;
+        transition: all 0.3s ease;
+        color: #1f2937 !important;
+    }
+    
+    .stRadio > div > label:hover {
+        background: #dbeafe;
+        border-color: #818cf8;
+        transform: translateX(5px);
+    }
+    
+    .stRadio label {
+        color: #4f46e5 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* ============= SCROLLBAR STYLES ============= */
+    ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        border: 2px solid #f1f5f9;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
     }
     </style>
 """, unsafe_allow_html=True)
 
+
+def show_animated_title():
+    """Display animated title section"""
+    st.markdown("""
+        <div style="text-align: center; padding: 2rem 0;">
+            <h1 style="
+                font-size: 4rem; 
+                font-weight: 800;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 0;
+                animation: bounceIn 1s ease-out;
+            ">
+                 AI Skill Gap Analyzer Pro
+            </h1>
+            <p style="
+                font-size: 1.3rem;
+                color: #6366f1;
+                font-weight: 500;
+                margin-top: 0.5rem;
+                animation: fadeIn 1.5s ease-in;
+            ">
+                Bridging Careers with Intelligence • Powered by Advanced NLP & BERT
+            </p>
+            <div style="
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-top: 1.5rem;
+                animation: slideInFromLeft 1s ease-out;
+            ">
+                <span style="
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                    color: white;
+                    padding: 0.5rem 1.5rem;
+                    border-radius: 20px;
+                    font-weight: 600;
+                    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+                ">✨ AI-Powered</span>
+                <span style="
+                    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                    color: white;
+                    padding: 0.5rem 1.5rem;
+                    border-radius: 20px;
+                    font-weight: 600;
+                    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+                ">🎯 Semantic Analysis</span>
+                <span style="
+                    background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+                    color: white;
+                    padding: 0.5rem 1.5rem;
+                    border-radius: 20px;
+                    font-weight: 600;
+                    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+                ">📊 Smart Insights</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 class DocumentUploader:
     """Handles file upload functionality"""
@@ -100,8 +758,9 @@ class DocumentUploader:
         self.max_file_size = 10 * 1024 * 1024
     
     def create_upload_interface(self):
-        st.title("🤖 AI Skill Gap Analyzer - Bridging Careers with Intelligence")
-        st.markdown("**Upload resumes and job descriptions for skill gap analysis**")
+        #st.title("🤖 AI Skill Gap Analyzer - Bridging Careers with Intelligence")
+        #st.markdown("**Upload resumes and job descriptions for skill gap analysis**")
+        show_animated_title()
         
         col1, col2 = st.columns(2)
         
@@ -1072,6 +1731,417 @@ class SkillVisualizer:
         
         fig.update_layout(height=400)
         return fig
+    
+    @staticmethod
+    def create_skills_coverage_donut(gap_result: Dict, resume_skills_count: int) -> go.Figure:
+        """Create donut chart showing skills coverage breakdown"""
+        
+        stats = gap_result['statistics']
+        
+        # Calculate percentages based on job description requirements
+        total_jd_skills = stats['total_required']
+        matched = stats['matched']
+        partial = stats['partial']
+        missing = stats['missing']
+        
+        # Additional resume skills not in JD
+        additional_resume_skills = resume_skills_count - matched - partial
+        if additional_resume_skills < 0:
+            additional_resume_skills = 0
+        
+        labels = [
+            'Exact Match',
+            'Partial Match', 
+            'Missing from Resume',
+            'Additional Resume Skills'
+        ]
+        
+        values = [matched, partial, missing, additional_resume_skills]
+        colors = ['#4CAF50', '#FFC107', '#F44336', '#2196F3']
+        
+        fig = go.Figure(data=[go.Pie(
+            labels=labels,
+            values=values,
+            hole=0.5,
+            marker=dict(colors=colors),
+            textposition='auto',
+            textinfo='label+percent+value',
+            hovertemplate='<b>%{label}</b><br>Skills: %{value}<br>Percentage: %{percent}<extra></extra>'
+        )])
+        
+        # Add annotation in the center
+        total_skills = sum(values)
+        match_rate = (matched / total_jd_skills * 100) if total_jd_skills > 0 else 0
+        
+        fig.add_annotation(
+            text=f"<b>{match_rate:.1f}%</b><br>Match Rate",
+            x=0.5, y=0.5,
+            font_size=16,
+            showarrow=False
+        )
+        
+        fig.update_layout(
+            title={
+                'text': "Skills Coverage Analysis",
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            height=450,
+            showlegend=True,
+            legend=dict(
+                orientation="v",
+                yanchor="middle",
+                y=0.5,
+                xanchor="left",
+                x=1.05
+            )
+        )
+        
+        return fig
+    
+class LearningPathRecommender:
+    """Provides learning paths and course recommendations for missing skills"""
+    
+    def __init__(self):
+        self.learning_paths = self._initialize_learning_paths()
+    
+    def _initialize_learning_paths(self) -> Dict:
+        """Initialize learning paths with duration and course recommendations"""
+        return {
+            # Programming Languages
+            'Python': {
+                'duration': '3-6 months',
+                'difficulty': 'Beginner to Intermediate',
+                'learning_path': [
+                    '1. Python basics and syntax',
+                    '2. Data structures and algorithms',
+                    '3. OOP concepts',
+                    '4. Libraries and frameworks'
+                ],
+                'courses': [
+                    {'name': 'Python for Everybody (Coursera)', 'provider': 'University of Michigan', 'duration': '8 months'},
+                    {'name': 'Complete Python Bootcamp (Udemy)', 'provider': 'Jose Portilla', 'duration': '22 hours'},
+                    {'name': 'Python Programming (edX)', 'provider': 'MIT', 'duration': '9 weeks'}
+                ],
+                'certifications': [
+                    'PCAP - Certified Associate in Python Programming',
+                    'PCPP - Certified Professional in Python Programming'
+                ]
+            },
+            'Java': {
+                'duration': '4-8 months',
+                'difficulty': 'Intermediate',
+                'learning_path': [
+                    '1. Java fundamentals and syntax',
+                    '2. OOP principles',
+                    '3. Collections framework',
+                    '4. Spring framework'
+                ],
+                'courses': [
+                    {'name': 'Java Programming Masterclass (Udemy)', 'provider': 'Tim Buchalka', 'duration': '80 hours'},
+                    {'name': 'Java Specialization (Coursera)', 'provider': 'Duke University', 'duration': '6 months'},
+                    {'name': 'Java Certification Training (Simplilearn)', 'provider': 'Simplilearn', 'duration': '40 hours'}
+                ],
+                'certifications': [
+                    'Oracle Certified Associate Java Programmer (OCAJP)',
+                    'Oracle Certified Professional Java Programmer (OCPJP)'
+                ]
+            },
+            'JavaScript': {
+                'duration': '3-5 months',
+                'difficulty': 'Beginner to Intermediate',
+                'learning_path': [
+                    '1. JS fundamentals and ES6+',
+                    '2. DOM manipulation',
+                    '3. Async programming',
+                    '4. Modern frameworks (React/Vue)'
+                ],
+                'courses': [
+                    {'name': 'JavaScript: Understanding the Weird Parts (Udemy)', 'provider': 'Anthony Alicea', 'duration': '11.5 hours'},
+                    {'name': 'Modern JavaScript From The Beginning (Udemy)', 'provider': 'Brad Traversy', 'duration': '21.5 hours'},
+                    {'name': 'JavaScript Algorithms (freeCodeCamp)', 'provider': 'freeCodeCamp', 'duration': '300 hours'}
+                ],
+                'certifications': [
+                    'JavaScript Developer Certificate (W3Schools)',
+                    'Meta Front-End Developer Professional Certificate'
+                ]
+            },
+            
+            # Web Frameworks
+            'React': {
+                'duration': '2-4 months',
+                'difficulty': 'Intermediate',
+                'learning_path': [
+                    '1. React fundamentals and JSX',
+                    '2. Components and props',
+                    '3. State management (Redux/Context)',
+                    '4. Hooks and advanced patterns'
+                ],
+                'courses': [
+                    {'name': 'React - The Complete Guide (Udemy)', 'provider': 'Maximilian Schwarzmüller', 'duration': '48.5 hours'},
+                    {'name': 'Meta React Specialization (Coursera)', 'provider': 'Meta', 'duration': '7 months'},
+                    {'name': 'Full Stack Open (Helsinki)', 'provider': 'University of Helsinki', 'duration': 'Self-paced'}
+                ],
+                'certifications': [
+                    'Meta Front-End Developer Certificate',
+                    'React Developer Certification (HackerRank)'
+                ]
+            },
+            'Angular': {
+                'duration': '3-5 months',
+                'difficulty': 'Intermediate to Advanced',
+                'learning_path': [
+                    '1. TypeScript fundamentals',
+                    '2. Angular components and modules',
+                    '3. Services and dependency injection',
+                    '4. RxJS and reactive programming'
+                ],
+                'courses': [
+                    {'name': 'Angular - The Complete Guide (Udemy)', 'provider': 'Maximilian Schwarzmüller', 'duration': '37.5 hours'},
+                    {'name': 'Angular Certification Training (Simplilearn)', 'provider': 'Simplilearn', 'duration': '32 hours'}
+                ],
+                'certifications': [
+                    'Angular Certification (Official)',
+                    'Google Mobile Web Specialist'
+                ]
+            },
+            'Node.js': {
+                'duration': '2-4 months',
+                'difficulty': 'Intermediate',
+                'learning_path': [
+                    '1. Node.js fundamentals',
+                    '2. Express.js framework',
+                    '3. RESTful API development',
+                    '4. Database integration'
+                ],
+                'courses': [
+                    {'name': 'The Complete Node.js Developer Course (Udemy)', 'provider': 'Andrew Mead', 'duration': '34.5 hours'},
+                    {'name': 'NodeJS - The Complete Guide (Udemy)', 'provider': 'Maximilian Schwarzmüller', 'duration': '40.5 hours'}
+                ],
+                'certifications': [
+                    'OpenJS Node.js Application Developer (JSNAD)',
+                    'OpenJS Node.js Services Developer (JSNSD)'
+                ]
+            },
+            
+            # ML/AI
+            'Machine Learning': {
+                'duration': '6-12 months',
+                'difficulty': 'Advanced',
+                'learning_path': [
+                    '1. Python and mathematics basics',
+                    '2. ML algorithms and theory',
+                    '3. Feature engineering',
+                    '4. Model deployment'
+                ],
+                'courses': [
+                    {'name': 'Machine Learning Specialization (Coursera)', 'provider': 'Andrew Ng', 'duration': '3 months'},
+                    {'name': 'Applied Data Science with Python (Coursera)', 'provider': 'University of Michigan', 'duration': '5 months'},
+                    {'name': 'Machine Learning Engineer Nanodegree (Udacity)', 'provider': 'Udacity', 'duration': '3 months'}
+                ],
+                'certifications': [
+                    'TensorFlow Developer Certificate',
+                    'AWS Certified Machine Learning - Specialty',
+                    'Google Professional Machine Learning Engineer'
+                ]
+            },
+            'Deep Learning': {
+                'duration': '6-12 months',
+                'difficulty': 'Advanced',
+                'learning_path': [
+                    '1. Neural networks fundamentals',
+                    '2. CNNs and computer vision',
+                    '3. RNNs and NLP',
+                    '4. Advanced architectures (Transformers)'
+                ],
+                'courses': [
+                    {'name': 'Deep Learning Specialization (Coursera)', 'provider': 'Andrew Ng', 'duration': '5 months'},
+                    {'name': 'Practical Deep Learning for Coders (fast.ai)', 'provider': 'fast.ai', 'duration': 'Self-paced'},
+                    {'name': 'Deep Learning Nanodegree (Udacity)', 'provider': 'Udacity', 'duration': '4 months'}
+                ],
+                'certifications': [
+                    'TensorFlow Developer Certificate',
+                    'PyTorch Certification',
+                    'NVIDIA Deep Learning Institute Certificates'
+                ]
+            },
+            'TensorFlow': {
+                'duration': '3-6 months',
+                'difficulty': 'Intermediate to Advanced',
+                'learning_path': [
+                    '1. TensorFlow basics',
+                    '2. Building neural networks',
+                    '3. CNNs and image processing',
+                    '4. Model deployment'
+                ],
+                'courses': [
+                    {'name': 'TensorFlow Developer Certificate Program (Coursera)', 'provider': 'DeepLearning.AI', 'duration': '4 months'},
+                    {'name': 'Complete TensorFlow 2 Bootcamp (Udemy)', 'provider': 'Jose Portilla', 'duration': '14 hours'}
+                ],
+                'certifications': [
+                    'TensorFlow Developer Certificate (Official)'
+                ]
+            },
+            
+            # Cloud Platforms
+            'AWS': {
+                'duration': '3-6 months',
+                'difficulty': 'Intermediate',
+                'learning_path': [
+                    '1. AWS fundamentals and core services',
+                    '2. EC2, S3, and storage',
+                    '3. Databases and networking',
+                    '4. Security and best practices'
+                ],
+                'courses': [
+                    {'name': 'AWS Certified Solutions Architect (Udemy)', 'provider': 'Stephane Maarek', 'duration': '27 hours'},
+                    {'name': 'AWS Fundamentals Specialization (Coursera)', 'provider': 'AWS', 'duration': '4 months'},
+                    {'name': 'AWS Cloud Practitioner Essentials (AWS Training)', 'provider': 'AWS', 'duration': '6 hours'}
+                ],
+                'certifications': [
+                    'AWS Certified Cloud Practitioner',
+                    'AWS Certified Solutions Architect - Associate',
+                    'AWS Certified Developer - Associate'
+                ]
+            },
+            'Azure': {
+                'duration': '3-6 months',
+                'difficulty': 'Intermediate',
+                'learning_path': [
+                    '1. Azure fundamentals',
+                    '2. Virtual machines and storage',
+                    '3. Azure databases and networking',
+                    '4. DevOps and automation'
+                ],
+                'courses': [
+                    {'name': 'AZ-900: Azure Fundamentals (Microsoft Learn)', 'provider': 'Microsoft', 'duration': 'Self-paced'},
+                    {'name': 'Microsoft Azure Fundamentals (Pluralsight)', 'provider': 'Pluralsight', 'duration': '5 hours'},
+                    {'name': 'Azure Administrator Certification (Udemy)', 'provider': 'Scott Duffy', 'duration': '13 hours'}
+                ],
+                'certifications': [
+                    'Microsoft Certified: Azure Fundamentals',
+                    'Microsoft Certified: Azure Administrator Associate',
+                    'Microsoft Certified: Azure Developer Associate'
+                ]
+            },
+            
+            # DevOps
+            'Docker': {
+                'duration': '1-3 months',
+                'difficulty': 'Intermediate',
+                'learning_path': [
+                    '1. Containerization basics',
+                    '2. Docker images and containers',
+                    '3. Docker Compose',
+                    '4. Docker networking and volumes'
+                ],
+                'courses': [
+                    {'name': 'Docker Mastery (Udemy)', 'provider': 'Bret Fisher', 'duration': '19.5 hours'},
+                    {'name': 'Docker and Kubernetes (Udemy)', 'provider': 'Stephen Grider', 'duration': '21.5 hours'}
+                ],
+                'certifications': [
+                    'Docker Certified Associate (DCA)',
+                    'Certified Kubernetes Administrator (CKA)'
+                ]
+            },
+            'Kubernetes': {
+                'duration': '3-6 months',
+                'difficulty': 'Advanced',
+                'learning_path': [
+                    '1. Container orchestration basics',
+                    '2. Kubernetes architecture',
+                    '3. Deployments and services',
+                    '4. Production best practices'
+                ],
+                'courses': [
+                    {'name': 'Kubernetes for Developers (Linux Foundation)', 'provider': 'Linux Foundation', 'duration': 'Self-paced'},
+                    {'name': 'Kubernetes Mastery (Udemy)', 'provider': 'Bret Fisher', 'duration': '8 hours'}
+                ],
+                'certifications': [
+                    'Certified Kubernetes Administrator (CKA)',
+                    'Certified Kubernetes Application Developer (CKAD)',
+                    'Certified Kubernetes Security Specialist (CKS)'
+                ]
+            },
+            
+            # Databases
+            'MongoDB': {
+                'duration': '2-4 months',
+                'difficulty': 'Beginner to Intermediate',
+                'learning_path': [
+                    '1. NoSQL database concepts',
+                    '2. MongoDB basics and CRUD',
+                    '3. Aggregation framework',
+                    '4. Indexing and performance'
+                ],
+                'courses': [
+                    {'name': 'MongoDB University (Free)', 'provider': 'MongoDB', 'duration': 'Self-paced'},
+                    {'name': 'Complete MongoDB Developer Course (Udemy)', 'provider': 'Jon Avis', 'duration': '8 hours'}
+                ],
+                'certifications': [
+                    'MongoDB Certified Developer Associate',
+                    'MongoDB Certified DBA Associate'
+                ]
+            },
+            'PostgreSQL': {
+                'duration': '2-4 months',
+                'difficulty': 'Intermediate',
+                'learning_path': [
+                    '1. SQL fundamentals',
+                    '2. PostgreSQL features',
+                    '3. Database design and optimization',
+                    '4. Advanced queries and functions'
+                ],
+                'courses': [
+                    {'name': 'The Complete SQL Bootcamp (Udemy)', 'provider': 'Jose Portilla', 'duration': '9 hours'},
+                    {'name': 'PostgreSQL Administration (Pluralsight)', 'provider': 'Pluralsight', 'duration': '6 hours'}
+                ],
+                'certifications': [
+                    'PostgreSQL 12 Associate Certification',
+                    'EDB PostgreSQL 12 Associate Certification'
+                ]
+            },
+            
+            # Default for unlisted skills
+            'default': {
+                'duration': '2-6 months',
+                'difficulty': 'Varies',
+                'learning_path': [
+                    '1. Learn fundamentals through documentation',
+                    '2. Practice with hands-on projects',
+                    '3. Join community and forums',
+                    '4. Build portfolio projects'
+                ],
+                'courses': [
+                    {'name': 'Official Documentation', 'provider': 'Official Website', 'duration': 'Self-paced'},
+                    {'name': 'YouTube Tutorials', 'provider': 'Various', 'duration': 'Varies'},
+                    {'name': 'Udemy/Coursera Courses', 'provider': 'Search specific skill', 'duration': 'Varies'}
+                ],
+                'certifications': [
+                    'Check official certification websites',
+                    'Industry-recognized certifications may be available'
+                ]
+            }
+        }
+    
+    def get_learning_recommendation(self, skill: str) -> Dict:
+        """Get learning recommendation for a specific skill"""
+        # Normalize skill name
+        skill_normalized = skill.strip()
+        
+        # Check for exact match
+        if skill_normalized in self.learning_paths:
+            return self.learning_paths[skill_normalized]
+        
+        # Check for partial match (case-insensitive)
+        for key in self.learning_paths.keys():
+            if key.lower() in skill_normalized.lower() or skill_normalized.lower() in key.lower():
+                return self.learning_paths[key]
+        
+        # Return default recommendation
+        default_rec = self.learning_paths['default'].copy()
+        default_rec['skill_name'] = skill_normalized
+        return default_rec
 
 
 class DocumentProcessor:
@@ -1334,7 +2404,7 @@ class DocumentProcessor:
             st.session_state.show_skill_extraction = False
             st.rerun()
         
-        st.title("🎯 AI-Powered Skill Extraction & Analysis ")
+        st.title(" AI-Powered Skill Extraction & Analysis ")
         st.markdown("### Extract skills from Resume or Job Description using NLP")
         st.markdown("---")
         
@@ -1760,7 +2830,7 @@ class DocumentProcessor:
             st.session_state.show_gap_analysis = False
             st.rerun()
         
-        st.title("📊 Advanced Skill Gap Analysis ")
+        st.title("  Advanced Skill Gap Analysis ")
         st.markdown("### AI-Powered Skill Matching with Semantic Embeddings")
         st.markdown("---")
         
@@ -2124,6 +3194,30 @@ class DocumentProcessor:
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("---")
+        st.markdown("###  Skills Coverage Breakdown")
+    
+        resume_skills_data = st.session_state.get('resume_skills_data', {})
+        resume_skills_count = len([s for s in resume_skills_data.get('all_skills', []) 
+                               if self.skill_extractor.skill_db.get_category_for_skill(s) != 'other'])
+    
+        fig_donut = self.visualizer.create_skills_coverage_donut(gap_result, resume_skills_count)
+    
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.plotly_chart(fig_donut, use_container_width=True)
+    
+        # Add explanation
+        st.info("""
+        **📊 Understanding the Coverage Chart:**
+        - **Exact Match (Green):** Skills that perfectly match between resume and job description
+        - **Partial Match (Yellow):** Skills that are semantically similar but not exact matches  
+        - **Missing from Resume (Red):** Required skills not found in your resume
+        - **Additional Resume Skills (Blue):** Extra skills you have beyond job requirements
+      """)
+        
+        
     
     def _display_similarity_heatmap(self, gap_result):
         st.subheader("🔥 Skill Similarity Heatmap")
@@ -2167,46 +3261,107 @@ class DocumentProcessor:
         st.plotly_chart(fig, use_container_width=True)
     
     def _display_priority_gaps(self, missing_skills):
-        st.subheader("🎯 High-Priority Skill Gaps & Recommendations")
-        
+        """Enhanced priority gaps with learning paths and recommendations"""
+        st.subheader("🎯 High-Priority Skill Gaps & Learning Recommendations")
+    
         filtered_missing = [s for s in missing_skills if s['category'] != 'other']
-        
+    
         if not filtered_missing:
             st.success("🎉 Excellent! No critical skill gaps identified!")
             return
-        
+    
+        # Initialize learning recommender
+        recommender = LearningPathRecommender()
+    
         critical = [s for s in filtered_missing if s['importance'] == 'Critical']
         high = [s for s in filtered_missing if s['importance'] == 'High']
         medium = [s for s in filtered_missing if s['importance'] == 'Medium']
-        
+    
         if critical:
             st.markdown("### 🔴 Critical Priority")
             for skill_info in critical:
+                learning_rec = recommender.get_learning_recommendation(skill_info['jd_skill'])
+            
                 with st.expander(f"⚠️ {skill_info['jd_skill']}", expanded=True):
                     col1, col2 = st.columns([2, 1])
+                
                     with col1:
                         st.write(f"**Category:** {skill_info['category'].replace('_', ' ').title()}")
                         st.write(f"**Gap Priority:** {skill_info.get('gap_priority', 0):.2f}")
-                        st.markdown("**💡 Suggested Actions:**")
-                        st.markdown("- 📚 Take online course or certification")
-                        st.markdown("- 💼 Gain hands-on project experience")
-                        st.markdown("- 📝 Add to resume if you have relevant experience")
+                    
+                        st.markdown("---")
+                        st.markdown("### 📚 Learning Path")
+                        for step in learning_rec['learning_path']:
+                            st.markdown(f"- {step}")
+                    
+                        st.markdown("---")
+                        st.markdown("### 🎓 Recommended Courses")
+                        for course in learning_rec['courses']:
+                            st.markdown(f"""
+                            **{course['name']}**
+                            - Provider: {course['provider']}
+                            - Duration: {course['duration']}
+                            """)
+                    
+                        if learning_rec.get('certifications'):
+                            st.markdown("---")
+                            st.markdown("### 🏆 Relevant Certifications")
+                            for cert in learning_rec['certifications']:
+                                st.markdown(f"- ✓ {cert}")
+                
                     with col2:
                         st.metric("Priority Level", "CRITICAL", delta="High Impact")
-        
+                        st.metric("Est. Learning Time", learning_rec['duration'])
+                        st.metric("Difficulty", learning_rec['difficulty'])
+                    
+                        st.markdown("---")
+                        st.markdown("**💡 Quick Actions:**")
+                        st.markdown("- 📖 Start with basics")
+                        st.markdown("- 💻 Build projects")
+                        st.markdown("- 🎯 Get certified")
+    
         if high:
             st.markdown("### 🟠 High Priority")
             for skill_info in high[:5]:
+                learning_rec = recommender.get_learning_recommendation(skill_info['jd_skill'])
+            
                 with st.expander(f"⚡ {skill_info['jd_skill']}"):
-                    st.write(f"**Category:** {skill_info['category'].replace('_', ' ').title()}")
-                    st.write(f"**Gap Priority:** {skill_info.get('gap_priority', 0):.2f}")
-                    st.markdown("**💡 Recommendation:** Consider learning this skill to improve match score")
-        
+                    col1, col2 = st.columns([3, 1])
+                
+                    with col1:
+                        st.write(f"**Category:** {skill_info['category'].replace('_', ' ').title()}")
+                        st.write(f"**Gap Priority:** {skill_info.get('gap_priority', 0):.2f}")
+                        st.write(f"**Learning Duration:** {learning_rec['duration']}")
+                    
+                        st.markdown("**📚 Top Course:**")
+                        if learning_rec['courses']:
+                            top_course = learning_rec['courses'][0]
+                            st.info(f"🎓 {top_course['name']} by {top_course['provider']}")
+                    
+                        if learning_rec.get('certifications'):
+                            st.markdown("**🏆 Certification:**")
+                            st.info(f"✓ {learning_rec['certifications'][0]}")
+                
+                    with col2:
+                        st.metric("Duration", learning_rec['duration'])
+                        st.metric("Level", learning_rec['difficulty'])
+    
         if medium:
             st.markdown(f"### 🟡 Medium Priority ({len(medium)} skills)")
-            with st.expander("View Medium Priority Skills"):
+            with st.expander("View Medium Priority Skills with Learning Times"):
                 for skill_info in medium:
-                    st.write(f"• {skill_info['jd_skill']} ({skill_info['category'].replace('_', ' ').title()})")
+                    learning_rec = recommender.get_learning_recommendation(skill_info['jd_skill'])
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                
+                    with col1:
+                        st.write(f"**{skill_info['jd_skill']}**")
+                        st.caption(f"Category: {skill_info['category'].replace('_', ' ').title()}")
+                
+                    with col2:
+                        st.caption(f"⏱️ {learning_rec['duration']}")
+                
+                    with col3:
+                        st.caption(f"📊 {learning_rec['difficulty']}")
     
     def _display_enhanced_export(self, gap_result):
         st.subheader("📥 Export Gap Analysis Report")

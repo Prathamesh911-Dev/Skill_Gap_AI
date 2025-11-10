@@ -55,6 +55,8 @@ st.set_page_config(
 
 # FIXED UI STYLING - Replace your existing st.markdown styling section
 
+# FIXED UI STYLING - Replace your existing st.markdown styling section
+
 st.markdown("""
     <style>
     /* ============= GLOBAL STYLES ============= */
@@ -137,7 +139,7 @@ st.markdown("""
         color: #1f2937 !important;
     }
     
-    /* FIXED: Sidebar Slider - RED like the screenshot */
+    /* FIXED: Sidebar Slider - Smaller knob, RED filled, WHITE empty */
     section[data-testid="stSidebar"] .stSlider label {
         color: #ffffff !important;
         font-weight: 600 !important;
@@ -145,12 +147,12 @@ st.markdown("""
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }
     
-    /* Slider thumb - RED circle */
+    /* Slider thumb - SMALLER RED circle */
     section[data-testid="stSidebar"] .stSlider [role="slider"] {
         background-color: #ef4444 !important;
-        border: 3px solid #ef4444 !important;
-        width: 20px !important;
-        height: 20px !important;
+        border: 2px solid #ef4444 !important;
+        width: 16px !important;
+        height: 16px !important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
     }
     
@@ -159,27 +161,25 @@ st.markdown("""
         background: transparent !important;
     }
     
-    /* Slider track background - light/white */
     section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] > div {
         background: transparent !important;
     }
     
+    /* Slider track background - WHITE (right side - empty) */
     section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] > div > div {
-        background-color: rgba(255, 255, 255, 0.5) !important;
-        height: 4px !important;
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        height: 3px !important;
     }
     
-    /* Slider filled track - RED (left side) */
+    /* Slider filled track - RED (left side - filled) */
     section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] > div > div > div {
         background-color: #ef4444 !important;
-        height: 4px !important;
+        height: 3px !important;
     }
     
-    /* Slider value text - RED */
-    section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] [data-testid="stTickBarMin"],
-    section[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] [data-testid="stTickBarMax"] {
-        color: #ef4444 !important;
-        font-weight: 600 !important;
+    /* Slider value text - WHITE */
+    section[data-testid="stSidebar"] .stSlider div[data-testid="stTickBar"] {
+        color: #ffffff !important;
     }
     
     /* FIXED: Sidebar Status/Info boxes - Change background */
@@ -200,36 +200,42 @@ st.markdown("""
         text-shadow: 1px 1px 3px rgba(0,0,0,0.3) !important;
     }
     
-    /* FIXED: Sidebar Metric (Match Score) - Pure BLACK, no glow */
+    /* FIXED: Sidebar Metric (Match Score) - BOLD WHITE text with strong visibility */
     section[data-testid="stSidebar"] [data-testid="stMetricValue"] {
-        color: #000000 !important;
-        font-size: 2.5rem !important;
+        color: #ffffff !important;
+        font-size: 3rem !important;
         font-weight: 900 !important;
-        text-shadow: none !important;
-        -webkit-text-stroke: 0px !important;
+        text-shadow: 
+            2px 2px 8px rgba(0,0,0,0.8),
+            -1px -1px 0 rgba(0,0,0,0.5),
+            1px -1px 0 rgba(0,0,0,0.5),
+            -1px 1px 0 rgba(0,0,0,0.5),
+            1px 1px 0 rgba(0,0,0,0.5) !important;
+        letter-spacing: 1px !important;
     }
     
     section[data-testid="stSidebar"] [data-testid="stMetricLabel"] {
         color: #ffffff !important;
         font-weight: 700 !important;
-        font-size: 1.1rem !important;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        font-size: 1.2rem !important;
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+        letter-spacing: 0.5px !important;
     }
     
     section[data-testid="stSidebar"] [data-testid="stMetricDelta"] {
         color: #86efac !important;
         font-weight: 700 !important;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
     }
     
-    /* Metric container in sidebar - lighter background for black text visibility */
+    /* Metric container in sidebar - darker background for better contrast */
     section[data-testid="stSidebar"] div[data-testid="metric-container"] {
-        background: rgba(255, 255, 255, 0.3) !important;
+        background: rgba(0, 0, 0, 0.25) !important;
         backdrop-filter: blur(10px) !important;
-        border: 2px solid rgba(255, 255, 255, 0.4) !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
         border-radius: 15px !important;
         padding: 1.5rem !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
     }
     
     /* Sidebar buttons */
@@ -563,16 +569,35 @@ st.markdown("""
     }
     
     /* ============= MAIN CONTENT SLIDER STYLES ============= */
+    /* Main content sliders - like the second screenshot */
     .stSlider > div > div > div > div {
         background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
     }
     
+    /* Main slider track - light gray background */
     .stSlider > div > div > div {
-        background: #e0e7ff !important;
+        background: #e5e7eb !important;
+        height: 4px !important;
     }
     
+    /* Main slider thumb - SMALLER, purple to match filled track */
     .stSlider [role="slider"] {
         background-color: #667eea !important;
+        border: 2px solid #667eea !important;
+        width: 16px !important;
+        height: 16px !important;
+        box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    /* Main slider label */
+    .stSlider label {
+        color: #4f46e5 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Main slider value text */
+    .stSlider div[data-testid="stTickBar"] {
+        color: #6b7280 !important;
     }
     
     /* ============= TEXT AREA STYLES ============= */
